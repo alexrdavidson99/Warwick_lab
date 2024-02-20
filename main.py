@@ -23,6 +23,7 @@ def gaus(x, a, x0, sigma):
 data = pd.read_csv("hists/hist data 10k.csv", skiprows= 100, names = ["volts_seconds", "counts"], sep=",")
 time_data = pd.read_csv("hists/time_hist_data_gen.csv", names=["time_bins","counts"], sep=",")
 time_data_laser = pd.read_csv("hists/time_hist_data_zaster.csv", names=["time_bins","counts"], sep=",")
+time_data_ttl = pd.read_csv("hists/time_hist_data_ttl.csv", names=["time_bins","counts"], sep=",")
 
 #time_data = time_data[time_data["counts"] > 0]
 #time_data_laser = time_data_laser[time_data_laser["counts"] > 0]
@@ -32,12 +33,16 @@ print(sum(time_data_laser["counts"]))
 
 popt, pcov = curve_fit(gaus, time_data["time_bins"], time_data["counts"], method='lm', maxfev=10000, p0=[3095, -1.376000e-08, 3e-09])
 popt_laser, pcov_laser = curve_fit(gaus, time_data_laser["time_bins"], time_data_laser["counts"], method='lm', maxfev=10000, p0=[1160, -1.326000e-08, 3e-09])
+popt_ttl, pcov_ttl = curve_fit(gaus, time_data_ttl["time_bins"], time_data_ttl["counts"], method='lm', maxfev=10000, p0=[7160, -3.326000e-08, 3e-09])
+
 print(popt)
 
 x_gauss = np.linspace(-14500e-12, -13500e-12, 2000)
 x_gauss_laser = np.linspace(-13500e-12, -12500e-12, 2000)
+x_gauss_ttl = np.linspace(-33500e-12, -30500e-12, 2000)
 y_gauss = gaus(x_gauss, popt[0], popt[1], popt[2])
 y_gauss_laser = gaus(x_gauss_laser, popt_laser[0], popt_laser[1], popt_laser[2])
+y_gauss_ttl = gaus(x_gauss_ttl, popt_ttl[0], popt_ttl[1], popt_ttl[2])
 
 # Find peaks and calculate FWHM for the original data
 peaks, _ = find_peaks(time_data["counts"], height=540)
@@ -49,9 +54,15 @@ peaks_laser, _ = find_peaks(time_data_laser["counts"], height=540)
 fwhm_laser = peak_widths(time_data_laser["counts"], peaks_laser, rel_height=0.5)
 print(f'FWHM for laser data: {fwhm_laser[0][0]*40:.2e} ps')
 
+# Find peaks and calculate FWHM for the ttl data
+peaks_ttl, _ = find_peaks(time_data_ttl["counts"], height=540)
+fwhm_ttl = peak_widths(time_data_ttl["counts"], peaks_ttl, rel_height=0.5)
+print(f'FWHM for ttl data: {fwhm_ttl[0][0]*40:.2e} ps')
+
 
 plt.plot(x_gauss, y_gauss, 'r--', linewidth=2, label = f"FWHM Gen: {fwhm_data[0][0]*40:.2f}ps ")
 plt.plot(x_gauss_laser , y_gauss_laser, 'g--', linewidth=2, label = f"FWHM Laser: {fwhm_laser[0][0]*40:.2f}ps ")
+plt.plot(x_gauss_ttl , y_gauss_ttl, 'b--', linewidth=2, label = f"FWHM TTL: {fwhm_ttl[0][0]*40:.2f}ps ")
 
 # Add labels and a title
 plt.legend()
@@ -63,8 +74,10 @@ plt.title('Gaussian Distribution of oscilloscope data at looking timing jitter o
 
 plt.scatter(time_data["time_bins"],time_data["counts"], color='blue', label = f"counts")
 plt.scatter(time_data_laser["time_bins"],time_data_laser["counts"], color='red', label = f"counts_laser")
+plt.scatter(time_data_ttl["time_bins"],time_data_ttl["counts"], color='green', label = f"counts_ttl")
 
-plt.xlim(-14500e-12,-12500e-12)
+plt.xlim(-35500e-12,-30500e-12)
+#plt.xlim(-14500e-12,-12500e-12)
 
 plt.show()
 test = 1
